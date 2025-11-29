@@ -84,7 +84,7 @@ Replace contents of `packages/frontend/src/index.css` with:
 
 ```bash
 cd packages/frontend
-npx shadcn@latest init
+npx shadcn@latest init --defaults
 ```
 
 ## Step 15: Add shadcn Components (as needed)
