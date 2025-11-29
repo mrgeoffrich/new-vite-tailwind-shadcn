@@ -108,9 +108,27 @@ export interface PaginationParams {
  * Standard API response wrapper
  */
 export interface ApiResponse<T = unknown> {
+  success: boolean;
   data?: T;
   error?: ApiErrorResponse;
-  meta?: PaginationMeta;
+  pagination?: PaginationMeta;
+}
+
+/**
+ * Helper type for successful responses
+ */
+export interface SuccessResponse<T> {
+  success: true;
+  data: T;
+  pagination?: PaginationMeta;
+}
+
+/**
+ * Helper type for error responses
+ */
+export interface ErrorResponse {
+  success: false;
+  error: ApiErrorResponse;
 }
 
 /**
@@ -451,14 +469,22 @@ export interface ValidationSchemas {
  * Middleware factory for request validation using Zod schemas
  */
 export function validate(schemas: ValidationSchemas) {
-  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Validate request body
       if (schemas.body) {
         const result = await schemas.body.safeParseAsync(req.body);
         if (!result.success) {
           const errors = formatZodErrors(result.error);
-          next(createApiError("Invalid request body", 400, "VALIDATION_ERROR", errors));
+          res.status(400).json({
+            success: false,
+            error: {
+              message: "Invalid request body",
+              code: "VALIDATION_ERROR",
+              details: errors,
+              timestamp: new Date().toISOString(),
+            },
+          });
           return;
         }
         req.body = result.data; // Use parsed/transformed data
@@ -469,10 +495,19 @@ export function validate(schemas: ValidationSchemas) {
         const result = await schemas.query.safeParseAsync(req.query);
         if (!result.success) {
           const errors = formatZodErrors(result.error);
-          next(createApiError("Invalid query parameters", 400, "VALIDATION_ERROR", errors));
+          res.status(400).json({
+            success: false,
+            error: {
+              message: "Invalid query parameters",
+              code: "VALIDATION_ERROR",
+              details: errors,
+              timestamp: new Date().toISOString(),
+            },
+          });
           return;
         }
-        req.query = result.data;
+        // Assign validated data back to query
+        Object.assign(req.query, result.data);
       }
 
       // Validate URL parameters
@@ -480,15 +515,30 @@ export function validate(schemas: ValidationSchemas) {
         const result = await schemas.params.safeParseAsync(req.params);
         if (!result.success) {
           const errors = formatZodErrors(result.error);
-          next(createApiError("Invalid URL parameters", 400, "VALIDATION_ERROR", errors));
+          res.status(400).json({
+            success: false,
+            error: {
+              message: "Invalid URL parameters",
+              code: "VALIDATION_ERROR",
+              details: errors,
+              timestamp: new Date().toISOString(),
+            },
+          });
           return;
         }
-        req.params = result.data;
+        Object.assign(req.params, result.data);
       }
 
       next();
     } catch (error) {
-      next(createApiError("Validation failed", 500, "VALIDATION_ERROR"));
+      res.status(500).json({
+        success: false,
+        error: {
+          message: "Validation failed",
+          code: "VALIDATION_ERROR",
+          timestamp: new Date().toISOString(),
+        },
+      });
     }
   };
 }
@@ -596,7 +646,7 @@ export abstract class BaseError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
   public readonly context: Record<string, unknown> | undefined;
-  public override readonly cause: Error | undefined;
+  public readonly errorCause: Error | undefined;
 
   constructor(
     message: string,
@@ -612,7 +662,7 @@ export abstract class BaseError extends Error {
     this.statusCode = statusCode;
     this.isOperational = isOperational;
     this.context = context;
-    this.cause = cause;
+    this.errorCause = cause;
 
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -628,7 +678,7 @@ export abstract class BaseError extends Error {
       isOperational: this.isOperational,
       context: this.context,
       timestamp: new Date().toISOString(),
-      ...(this.cause && { cause: this.cause.message }),
+      ...(this.errorCause && { cause: this.errorCause.message }),
     };
   }
 
@@ -769,6 +819,7 @@ export function errorMiddleware(
 
   const statusCode = error.status || 500;
   const errorResponse: Record<string, unknown> = {
+    success: false,
     error: {
       message: error.message || "An unexpected error occurred",
       code: error.code || "INTERNAL_ERROR",
@@ -790,16 +841,24 @@ export function errorMiddleware(
   res.status(statusCode).json(errorResponse);
 }
 
-// PostgreSQL error handler helper
+// Prisma error handler helper
 export function handleDatabaseError(error: Error): ApiError {
-  const pgError = error as { code?: string; detail?: string };
+  const prismaError = error as { code?: string; meta?: { target?: string[] } };
 
-  if (pgError.code === "23505") { // Unique violation
-    return createApiError("Resource already exists", 409, "DUPLICATE_ERROR", { field: pgError.detail });
+  // Prisma unique constraint violation
+  if (prismaError.code === "P2002") {
+    const field = prismaError.meta?.target?.[0] || "field";
+    return createApiError(`A record with this ${field} already exists`, 409, "DUPLICATE_ERROR", { field });
   }
 
-  if (pgError.code === "23503") { // Foreign key violation
-    return createApiError("Referenced resource not found", 400, "REFERENCE_ERROR", { field: pgError.detail });
+  // Prisma record not found
+  if (prismaError.code === "P2025") {
+    return createApiError("Record not found", 404, "NOT_FOUND");
+  }
+
+  // Prisma foreign key constraint violation
+  if (prismaError.code === "P2003") {
+    return createApiError("Referenced record not found", 400, "REFERENCE_ERROR");
   }
 
   return createApiError("Database operation failed", 500, "DATABASE_ERROR");
@@ -856,9 +915,69 @@ export abstract class BaseController {
     limit: number
   ): void {
     res.json({
+      success: true,
       data,
       pagination: this.buildPaginationMeta(total, page, limit),
     });
+  }
+
+  /**
+   * Send success response with data
+   */
+  protected sendSuccess<T>(res: Response, data: T, statusCode: number = 200): void {
+    res.status(statusCode).json({
+      success: true,
+      data,
+    });
+  }
+
+  /**
+   * Send created response (201)
+   */
+  protected sendCreated<T>(res: Response, data: T): void {
+    this.sendSuccess(res, data, 201);
+  }
+
+  /**
+   * Send no content response (204)
+   */
+  protected sendNoContent(res: Response): void {
+    res.status(204).send();
+  }
+
+  /**
+   * Send error response
+   */
+  protected sendError(res: Response, message: string, code: string, statusCode: number = 400): void {
+    res.status(statusCode).json({
+      success: false,
+      error: {
+        message,
+        code,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Send not found error
+   */
+  protected sendNotFound(res: Response, resource: string = "Resource"): void {
+    this.sendError(res, `${resource} not found`, "NOT_FOUND", 404);
+  }
+
+  /**
+   * Send unauthorized error
+   */
+  protected sendUnauthorized(res: Response, message: string = "Unauthorized"): void {
+    this.sendError(res, message, "UNAUTHORIZED", 401);
+  }
+
+  /**
+   * Send forbidden error
+   */
+  protected sendForbidden(res: Response, message: string = "Access denied"): void {
+    this.sendError(res, message, "FORBIDDEN", 403);
   }
 }
 ```
@@ -903,11 +1022,11 @@ export function sendSuccess<T>(
   res: Response,
   data: T,
   statusCode: number = 200,
-  meta?: PaginationMeta
+  pagination?: PaginationMeta
 ): void {
-  const response: ApiResponse<T> = { data };
-  if (meta) {
-    response.meta = meta;
+  const response: ApiResponse<T> = { success: true, data };
+  if (pagination) {
+    response.pagination = pagination;
   }
   res.status(statusCode).json(response);
 }
@@ -923,9 +1042,11 @@ export function sendError(
   details?: unknown
 ): void {
   const response: ApiResponse = {
+    success: false,
     error: {
       message,
       code: code || "INTERNAL_ERROR",
+      timestamp: new Date().toISOString(),
       ...(details && { details }),
     },
   };
@@ -1213,6 +1334,7 @@ export abstract class BaseController {
     const totalPages = Math.ceil(total / limit);
 
     res.json({
+      success: true,
       data,
       pagination: {
         page,
@@ -1229,7 +1351,24 @@ export abstract class BaseController {
    * Send success response
    */
   protected sendSuccess<T>(res: Response, data: T, statusCode: number = 200): void {
-    res.status(statusCode).json(data);
+    res.status(statusCode).json({
+      success: true,
+      data,
+    });
+  }
+
+  /**
+   * Send created response (201)
+   */
+  protected sendCreated<T>(res: Response, data: T): void {
+    this.sendSuccess(res, data, 201);
+  }
+
+  /**
+   * Send no content response (204)
+   */
+  protected sendNoContent(res: Response): void {
+    res.status(204).send();
   }
 
   /**
@@ -1237,9 +1376,11 @@ export abstract class BaseController {
    */
   protected sendError(res: Response, message: string, code: string, statusCode: number = 400): void {
     res.status(statusCode).json({
+      success: false,
       error: {
         message,
         code,
+        timestamp: new Date().toISOString(),
       },
     });
   }
@@ -1249,6 +1390,20 @@ export abstract class BaseController {
    */
   protected sendNotFound(res: Response, resource: string = "Resource"): void {
     this.sendError(res, `${resource} not found`, "NOT_FOUND", 404);
+  }
+
+  /**
+   * Send unauthorized error
+   */
+  protected sendUnauthorized(res: Response, message: string = "Unauthorized"): void {
+    this.sendError(res, message, "UNAUTHORIZED", 401);
+  }
+
+  /**
+   * Send forbidden error
+   */
+  protected sendForbidden(res: Response, message: string = "Access denied"): void {
+    this.sendError(res, message, "FORBIDDEN", 403);
   }
 }
 ```
@@ -1309,10 +1464,13 @@ export function createApp(): Express {
   // 8. Health check (no auth)
   app.get("/health", (_req, res) => {
     res.json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      environment: config.server.nodeEnv,
-      uptime: process.uptime(),
+      success: true,
+      data: {
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        environment: config.server.nodeEnv,
+        uptime: process.uptime(),
+      },
     });
   });
 
@@ -1325,6 +1483,7 @@ export function createApp(): Express {
   // 11. 404 handler
   app.use((req: Request, res: Response) => {
     res.status(404).json({
+      success: false,
       error: {
         message: "Endpoint not found",
         code: "NOT_FOUND",
@@ -1358,7 +1517,7 @@ export class UsersController extends BaseController {
     const user = await userRepo.create(req.body);
 
     this.logger.info("User created", { userId: user.id });
-    this.sendSuccess(res, user, 201);
+    this.sendCreated(res, user);
   });
 
   /**
@@ -1424,7 +1583,7 @@ export class UsersController extends BaseController {
     }
 
     this.logger.info("User deleted", { userId: req.params.id });
-    res.status(204).send();
+    this.sendNoContent(res);
   });
 }
 ```
