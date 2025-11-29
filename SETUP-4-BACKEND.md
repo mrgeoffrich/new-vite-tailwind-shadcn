@@ -33,7 +33,7 @@ Edit `packages/backend/package.json`:
 
 ```bash
 cd packages/backend
-npm install express cors dotenv
+npm install express cors dotenv winston
 npm install passport passport-local passport-jwt passport-google-oauth20 jsonwebtoken bcryptjs
 npm install @prisma/client
 npm install -D typescript tsx @types/node @types/express @types/cors
