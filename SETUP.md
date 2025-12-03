@@ -11,20 +11,6 @@ Features:
 
 ---
 
-## Setup Phases
-
-Follow these phases in order to set up the complete monorepo:
-
-| Phase | Description | Steps |
-|-------|-------------|-------|
-| [Phase 1: Root Project Structure](./SETUP-1-ROOT.md) | Create project and configure workspaces | 1-3 |
-| [Phase 2: Shared Package Setup](./SETUP-2-SHARED.md) | Set up shared types and utilities | 4-7 |
-| [Phase 3: Frontend Package Setup](./SETUP-3-FRONTEND.md) | Vite + React + Tailwind + shadcn + Auth | 8-15.6 |
-| [Phase 4: Backend Package Setup](./SETUP-4-BACKEND.md) | Express + Passport + Prisma | 16-23 |
-| [Phase 5: Final Setup](./SETUP-5-FINAL.md) | Install dependencies and run | 24-27 |
-
----
-
 ## Project Structure
 
 ```
@@ -73,12 +59,26 @@ my-project/
 │           └── utils.ts
 ```
 
----
+## Instructions
 
-## Quick Start
+Read SETUP-1-ROOT.md first, and add it to the todo list. Execute the todo list.
 
-If you want a quick overview of all commands, see the [Quick Reference section in Phase 5](./SETUP-5-FINAL.md#quick-reference-all-cli-commands).
+Make sure you run a build after this is done and fix any issues before progressing.
 
-## Auth Flow
+Read SETUP-2-SHARED.md, and add it to the todo list. Execute the todo list.
 
-See the [auth flow summary in Phase 5](./SETUP-5-FINAL.md#auth-flow-summary).
+Make sure you run a build after this is done and fix any issues before progressing.
+
+Read SETUP-3-FRONTEND.md, and add it to the todo list. Execute the todo list.
+
+Make sure you run a build after this is done and fix any issues before progressing.
+
+Read SETup-4-BACKEND.md, and add it to the todo list. Execute the todo list.
+
+Make sure you run a build after this is done and fix any issues before progressing.
+
+Read SETUP-5-FINAL.md, and add it to the todo list. Execute the todo list.
+
+Make sure you run a build after this is done and fix any issues before progressing.
+
+Note: Don't read ahead, only read in the context for one step at a time as to not overwhelm the context window.

@@ -21,6 +21,8 @@ npm init -y
 
 ## Step 2: Configure Workspaces
 
+Important: Make sure the shared package is built first before any others.
+
 Edit root `package.json`:
 
 ```json
