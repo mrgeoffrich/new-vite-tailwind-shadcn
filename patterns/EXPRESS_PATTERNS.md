@@ -544,10 +544,9 @@ export function validate(schemas: ValidationSchemas) {
 }
 
 function formatZodErrors(error: ZodError): Array<{ field: string; message: string; code: string }> {
-  return error.errors.map((err) => ({
-    field: err.path.join("."),
-    message: err.message,
-    code: err.code,
+  return error.issues.map((issue) => ({
+    field: issue.path.join('.'),
+    message: issue.message,
   }));
 }
 ```
