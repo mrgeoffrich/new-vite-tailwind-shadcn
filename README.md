@@ -15,26 +15,26 @@ Linux:
 ```bash
 git clone https://github.com/mrgeoffrich/new-vite-tailwind-shadcn
 cd new-vite-tailwind-shadcn
-claude -p "I would like to create a new project at /home/me/repos/new-application, please use @SETUP.md for guidance on how to create the new project."
+./setup.sh "~/repos/new-application"
 ```
 
 Windows:
 ```powershell
 git clone https://github.com/mrgeoffrich/new-vite-tailwind-shadcn
 cd new-vite-tailwind-shadcn
-claude -p "I would like to create a new project at C:\Users\me\repos\new-application, please use @SETUP.md for guidance on how to create the new project."
+.\run-setup.ps1 C:\my-new-repo"
 ```
 
 ## Step 2 - Implement patterns in new project
 
 Linux:
 ```bash
-cd /home/me/repos/new-application
+cd ~/repos/new-application
 claude -p "We have just created this project and are looking to set up and implement some good patterns for organising the code base. Please use @patterns/INSTALL_PATTERNS.md for guidance on how to implement these patterns."
 ```
 
 Windows:
 ```powershell
-cd C:\Users\me\repos\new-application
+cd C:\my-new-repo
 claude -p "We have just created this project and are looking to set up and implement some good patterns for organising the code base. Please use @patterns/INSTALL_PATTERNS.md for guidance on how to implement these patterns."
 ```
