@@ -13,6 +13,8 @@ Features:
 
 ## Step 1: Create Root Project Structure
 
+Create the folder structure for the project root folder, you may need to create the intermediate folders if they dont exist.
+
 ```bash
 mkdir my-project
 cd my-project
@@ -46,7 +48,9 @@ Edit root `package.json`:
 ## Step 3: Create Package Directories
 
 ```bash
-mkdir -p packages/frontend packages/backend packages/shared
+mkdir -p packages
+cd packages
+mkdir frontend backend shared
 ```
 
 ---

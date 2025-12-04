@@ -10,7 +10,8 @@ npm create vite@latest . -- --template react-ts
 ## Step 9: Install Frontend Dependencies
 
 ```bash
-npm install tailwindcss @tailwindcss/vite react-router-dom
+npm install tailwindcss @tailwindcss/vite react-router-dom clsx tailwind-merge class-variance-authority
+      lucide-react tw-animate-css
 npm install -D @types/node
 ```
 
@@ -515,6 +516,19 @@ export default App
 
 ```bash
 mkdir -p packages/frontend/src/{contexts,pages,components}
+```
+
+## Step 15.7: Create utils file
+
+Replace `packages/frontend/src/lib/utils.ts`:
+
+```typescript
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 ```
 
 ---

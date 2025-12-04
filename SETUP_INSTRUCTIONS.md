@@ -58,27 +58,3 @@ my-project/
 │           ├── types.ts
 │           └── utils.ts
 ```
-
-## Instructions
-
-Read SETUP-1-ROOT.md first, and add it to the todo list. Execute the todo list.
-
-Make sure you run a build after this is done and fix any issues before progressing.
-
-Read SETUP-2-SHARED.md, and add it to the todo list. Execute the todo list.
-
-Make sure you run a build after this is done and fix any issues before progressing.
-
-Read SETUP-3-FRONTEND.md, and add it to the todo list. Execute the todo list.
-
-Make sure you run a build after this is done and fix any issues before progressing.
-
-Read SETup-4-BACKEND.md, and add it to the todo list. Execute the todo list.
-
-Make sure you run a build after this is done and fix any issues before progressing.
-
-Read SETUP-5-FINAL.md, and add it to the todo list. Execute the todo list.
-
-Make sure you run a build after this is done and fix any issues before progressing.
-
-Note: Don't read ahead, only read in the context for one step at a time as to not overwhelm the context window.
