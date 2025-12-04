@@ -31,6 +31,8 @@ Edit `packages/backend/package.json`:
 
 ## Step 17: Install Backend Dependencies
 
+Note when installing Prisma stay on version 6.
+
 ```bash
 cd packages/backend
 npm install express cors dotenv winston

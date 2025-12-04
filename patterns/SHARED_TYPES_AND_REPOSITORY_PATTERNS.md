@@ -849,15 +849,21 @@ export * from './browser.js';
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./browser": {
       "types": "./dist/browser.d.ts",
-      "import": "./dist/browser.js"
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.js",
+      "default": "./dist/browser.js"
     }
   }
 }
 ```
+
+**Note:** The `require` and `default` conditions are needed for Node.js/tsx CommonJS resolution compatibility. Without these, tools like `tsx` may fail to resolve the package correctly.
 
 ### Import Patterns
 

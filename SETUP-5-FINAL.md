@@ -26,10 +26,6 @@ cp /path/to/template-folder/patters/* .
 
 Copy the folders under @skills_to_copy/ into the .claude/skills folder in the new application.
 
-## Step 27: Update all npm pages to latest
-
-Go through all the packages and make sure we are running the latest version of all the npm packages..
-
 ## Step 28: Run a /init on the new project
 
 Get Claude to create a new CLAUDE.md for the new project.
